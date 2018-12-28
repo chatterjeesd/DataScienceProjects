@@ -1,0 +1,184 @@
+# Pandas lecture notes
+
+1. Importing csv in python:
+import pandas as pd
+url="xxxx.jhgas"
+df=pd.read_csv(url)
+
+NOTE: read_csv assumes that data contains a header.
+Ifyou don't want header to be assumed, use this:
+df=pd.read_csv(url, header=None)
+
+2. df.head(n) or df.tail(n) shows top or bottom n rows.
+
+3. Assign column names: put column names in a list, then assign columns.
+headers=["asd", "erwer",.....]
+df.columns=headers
+df.head(5)
+
+4. To export into a csv file:
+path="dasda"
+df.to_csv(path)
+
+5. It is important to check data types that pandas assigns to data.
+To check data type of each column:
+df.dtypes()
+To convert a column from one data type to other:
+df["column"]=df["column"].astype("int")
+We can change multiple columns at the same time:
+df[["column1", "column2"]] = df[["column1", "column2"]].astype("float")
+
+6. To get a statistical summary:
+df.describe() #This works on numeric data types.
+df.describe(include="all") # Includes objects(or str)
+df.describe(include=['object']) #Includes only object types
+
+7. To get a concise summary:
+df.info
+df.info() #clutter free
+
+8. To drop NaN from a column:
+df.dropna(subset=["column_name", axis=0)
+df.dropna(axis=0) # Will drop all rows that contains a nan
+df.dropna(axis=1) # Will drop the entire column that contains a nan
+
+NOTE: These commands will not change the dataframe directly.
+This is helpful to avoid mistakes and errors like accidently deleting a column.
+Use this to change the dataframe directly:
+df.dropna(subset=["column_name", axis=0, inplace=True)
+
+After dropping it is a good idea to reset the index of rows:
+df.reset_index(drop = True, inplace = True)
+
+
+9. To get names of columns:
+df.columns
+
+10. To select multiple columns:
+df[['column1', 'column2']]
+df[['column1', 'column2']].describe()
+
+11. Dataframe operations:
+To add 1 to a column name price:
+df["price]=df["price"]+1
+
+To divide all values in a column by 100
+df["column_div_100"]=df["column"]/100
+
+12. To calculate mean:
+df["column"].mean()
+
+13. To replace missing values with the mean:
+mean= df["column"].mean()
+df["column"].replace(np.nan, mean)
+To replace "?" to nan:
+df.replace("?", np.nan, inplace = True)
+
+To fill Nan with zero:
+df.fillna(0)
+14. Rename a column:
+df.rename(columns={"old_column_name":"new_column_name"}, inplace=True)
+
+15.Three types of normalisation:
+a) Simple Feature Scaling:
+New_value=old_value/Max_value_in_the_column
+df["column"]=df["column"]/df["column"].max()
+
+b) Min-Max:
+New_value=(old_value-Min_value_in_the_column)/(Max_value_in_the_column-Min_value_in_the_column)
+df["column"]=(df["column"]-df["column"].min())/(df["column"].max()-df["column"].min())
+
+c) Z-score: (can range from -3 to +3 but can be higher or lower)
+New_value=(old_value-mean)/stdev
+df["column"]=(df["column"]-df["column"].mean())/df["column"].std()
+
+16. Binning data: (verify doubtful !!)
+We would like four bins of equal size bandwidth. 
+The fourth is because the function "cut" includes the rightmost value: 
+binwidth=int((df["column"].max()-df["column"].min())/4)
+
+We build a bin array with a minimum value to a maximum value, with bandwidth calculated above. 
+The bins will be values used to determine when one bin ends and another begins:
+bins= np.arange(df["column"].min(), df["column"].max(), binwidth)
+
+We set group names:
+group_names= ['low', 'Medium', 'High']
+
+We apply the function "cut" to determine what each value of "df['column']" belongs to.
+df["binned_column"]= pd.cut(df["column"], bins, labels=group_names, include_lowest=True)
+
+17. Transforming categorical variables to dummy variables:
+dummy_variable= pd.get_dummies(df["column"])
+
+18. To detect missing data:
+missing_data= df.isnull()
+missing_data.head(5)
+To count missing values in each column:
+missing_data= df.isnull()
+for column in missing_data.columns.values.tolist():
+    print(column)
+    print (missing_data[column].value_counts())
+    print("") 
+
+19. To see which values are present in a particular column, we can use the ".value_counts()" method:
+df['column'].value_counts()
+To find the most common value in a column:
+df['column'].value_counts().idxmax()
+
+20. To drop a column:
+df.drop("column", axis=1, inplace=True)
+
+21. Merge new_dataframe to original dataframe:
+df=pd.concat([df, new_df], axis=1)
+
+22. Group BY:
+df_group_one=df[['column1','column2','column3']]
+df_group_one=df_group_one.groupby(['column1', 'column2'],as_index= False)["column3"].mean()
+
+Grouped data is easier to visualise using pivot table:
+grouped_pivot=df_group_one.pivot(index='column1',columns='column2')
+
+
+23. To measure correlation:
+To measure correlation in whole dataframe:
+df.corr() 
+To select a few columns:
+df[['column1','column2' ,'column3','column4']].corr() 
+
+A) Pearson Correlation: gives us two values- correlation coeffecient and P value
+Correlation Coeffecient:
+close to +1: Large positive corrl.
+close to -1: Large negative corrl.
+close to 0: No relationship.
+
+P-value:
+p<0.001: Strong certainty in result
+p<0.05: Moderate certainty in result
+p<0.1: Weak certainty in result
+p>0.1: No certainty in result
+
+SO, a strong correlation is when Corr. coeff close to 1 or -1 and p value is less than 0.001.
+Using Sci-py stats package, we can find pearson correlation by:
+Pearson_coef, p_value= stats.pearsonr[df['column1'], df['column2']]
+
+
+24. ANOVA (doubt, verify)
+We get two output:
+F-test score: variation between sample group means divided by variation.
+Small F= poor correlation
+Large F= strong correlation as the variation between the averages of the two groups 
+is comparable to the variations within the two groups.
+p-value: confidence degree
+
+df_anova=df[["column1", "column2"]]
+grouped_anova=df_anova.groupby(["column1"])
+anova_results=stats.f_oneway(grouped_anova.get_group("name1")["column2"]. grouped_anova.get_group("name2")["column2])
+
+25. Different plots for different data types: (int or float)
+1. Continuous variable: Scatter plot with fitted lines (regplot).
+sns.regplot(x="column1", y="column2", data=df)
+plt.ylim(0,)
+
+2. Categorical variable: boxplots (object or int)
+
+
